@@ -1,0 +1,899 @@
+{
+  "name": "ai-lead-qualification-workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hubspot-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "73fda3f8-9127-4d63-a5b5-0016d2b51d94",
+      "name": "Webhook — New Lead",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        64,
+        128
+      ],
+      "webhookId": "1a3bf5af-1a94-466e-91b5-03267404e040"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "OK",
+        "options": {}
+      },
+      "id": "55d856b0-1337-4a7c-9d97-711e316dbed9",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "firstName",
+              "stringValue": "={{ $json.body.body.properties.firstname }}"
+            },
+            {
+              "name": "lastName",
+              "stringValue": "={{ $json.body.body.properties.lastname }}"
+            },
+            {
+              "name": "email",
+              "stringValue": "={{ $json.body.body.properties.email }}"
+            },
+            {
+              "name": "company",
+              "stringValue": "={{ $json.body.body.properties.company }}"
+            },
+            {
+              "name": "website",
+              "stringValue": "={{ $json.body.body.properties.website }}"
+            },
+            {
+              "name": "contactId",
+              "stringValue": "={{ $json.body.objectId }}"
+            },
+            {
+              "name": "source",
+              "stringValue": "={{ $json.body.body.properties.hs_lead_source }}"
+            }
+          ]
+        },
+        "include": "selected",
+        "options": {}
+      },
+      "id": "fdb84b51-0326-4f93-9ac2-05d7081f5c1f",
+      "name": "Set Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        240,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.website.startsWith('http') ? $json.website : 'https://' + $json.website }}",
+        "options": {
+          "response": {
+            "response": {}
+          },
+          "timeout": 10000
+        }
+      },
+      "id": "81e3c47c-c869-40c8-85c9-4f7f2330cf47",
+      "name": "Scrape Website",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        400,
+        128
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a B2B lead qualification expert.\n\nAnalyse the company using the provided data. Be concise, realistic, and avoid assumptions not supported by the data.\n\nINPUT:\nName: {{$json.firstName}} {{$json.lastName}}\nCompany: {{$json.company}}\nWebsite Content: {{$json.text}}\n\nTASK:\n1. Identify industry based on business activities\n2. Estimate company size conservatively\n3. Identify real business pain points (not generic)\n4. Suggest practical automation opportunities\n5. Assign a lead score (0–100)\n\nSCORING RULES:\n- 70–100: Strong automation potential, clear business model, likely budget\n- 40–69: Moderate potential, unclear scale or need\n- 0–39: Weak fit, unclear business or no real automation need\n\nOUTPUT:\nReturn ONLY valid JSON. No markdown. No explanation.\n\n{\n  \"industry\": \"\",\n  \"companySize\": \"\",\n  \"painPoints\": [],\n  \"automationOpportunities\": [],\n  \"score\": 0,\n  \"scoreReason\": \"\",\n  \"emailSubject\": \"\",\n  \"emailBody\": \"\"\n}\n\nRULES:\n- Do NOT invent facts not present in input\n- Keep painPoints specific to the company\n- Keep automationOpportunities actionable\n- emailBody must be 3–4 sentences, personalized, and reference a real pain point\n- Tone: professional, concise\n- If unsure, return conservative estimates",
+              "role": "system"
+            },
+            {
+              "content": "=Name: {{$json.firstName}} {{$json.lastName}}\nCompany: {{$json.company}}\nWebsite Content: {{$json.text}}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "id": "27437da0-f226-4dfe-88dc-a9e05e09d43d",
+      "name": "OpenAI — Analyse Lead",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1,
+      "position": [
+        880,
+        128
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "0XGjppyHODgIjTtg",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fields": {
+          "values": [
+            {
+              "name": "score",
+              "type": "numberValue",
+              "numberValue": "={{ $json.message.content.score }}"
+            },
+            {
+              "name": "industry",
+              "stringValue": "={{$json.message.content.industry}}"
+            },
+            {
+              "name": "companySize",
+              "stringValue": "={{$json.message.content.companySize}}"
+            },
+            {
+              "name": "painPoints",
+              "type": "arrayValue",
+              "arrayValue": "={{$json.message.content.painPoints}}"
+            },
+            {
+              "name": "automationOpportunities",
+              "type": "arrayValue",
+              "arrayValue": "={{$json.message.content.automationOpportunities}}"
+            },
+            {
+              "name": "=scoreReason",
+              "stringValue": "={{$json.message.content.scoreReason}}"
+            },
+            {
+              "name": "emailSubject",
+              "stringValue": "={{$json.message.content.emailSubject}}"
+            },
+            {
+              "name": "emailBody",
+              "stringValue": "={{$json.message.content.emailBody}}"
+            },
+            {
+              "name": "contactId",
+              "stringValue": "={{ $('Set Fields').item.json.contactId }}"
+            }
+          ]
+        },
+        "include": "selected",
+        "options": {}
+      },
+      "id": "515f3fc9-caa5-42c2-ab14-157610dd4a85",
+      "name": "Parse AI Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        1184,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-hot",
+              "leftValue": "={{ $json.score }}",
+              "rightValue": 70,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2b0a510a-8ddb-47f0-b990-e8d5391ca75c",
+      "name": "Score >= 70? (Hot)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-warm",
+              "leftValue": "={{ $json.score }}",
+              "rightValue": 40,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "90ea9683-f9c8-4b83-aaba-8e6f6984ed6a",
+      "name": "Score >= 40? (Warm)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/{{$json.contactId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer pat-na2-b2db798e-e3db-4d7e-b728-326ce3f7ea89"
+            },
+            {
+              "name": "Content-Type ",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  properties: {\n    hs_lead_status: \"IN_PROGRESS\",\n    lifecyclestage: \"lead\",\n    hs_content_membership_notes: \"🔥 HOT LEAD — Score: \" + $json.score + \"/100\\n\\nIndustry: \" + $json.industry + \"\\nSize: \" + $json.companySize + \"\\n\\nPain Points:\\n\" + $json.painPoints.join('\\n') + \"\\n\\nAutomation Opportunities:\\n\" + $json.automationOpportunities.join('\\n') + \"\\n\\nReason: \" + $json.scoreReason\n  }\n} }}",
+        "options": {}
+      },
+      "id": "765033ed-6949-4eef-b02f-469ed86f6f5a",
+      "name": "HubSpot — Tag HOT",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1488,
+        16
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/{{$json.contactId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer pat-na2-b2db798e-e3db-4d7e-b728-326ce3f7ea89"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  properties: {\n    hs_lead_status: \"OPEN\",\n    lead_score: String($json.score),\n    hs_content_membership_notes: \"🟡 WARM LEAD — Score: \" \n      + $json.score \n      + \"/100\\n\\nIndustry: \" \n      + $json.industry \n      + \"\\nReason: \" \n      + $json.scoreReason\n  }\n} }}",
+        "options": {}
+      },
+      "id": "1ad44ce5-c838-4139-ad1f-dc321360168b",
+      "name": "HubSpot — Tag WARM",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1664,
+        128
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.hubapi.com/crm/v3/objects/contacts/{{$json.contactId}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer pat-na2-b2db798e-e3db-4d7e-b728-326ce3f7ea89"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  properties: {\n    hs_lead_status: \"UNQUALIFIED\",\n    lead_score: String($json.score),\n    hs_content_membership_notes: \"❄️ COLD LEAD — Score: \"\n      + $json.score\n      + \"/100\\nReason: \"\n      + $json.scoreReason\n  }\n} }}",
+        "options": {}
+      },
+      "id": "cd8c8e1b-82aa-4c5a-8ca7-ecee8f477c3a",
+      "name": "HubSpot — Tag COLD",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1664,
+        336
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.hubapi.com/crm/v3/objects/notes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer pat-na2-b2db798e-e3db-4d7e-b728-326ce3f7ea89"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  properties: {\n    hs_note_body: \"📧 AI OUTREACH EMAIL DRAFT\\n\\nSubject: \" \n      + $('Parse AI Response').item.json.emailSubject \n      + \"\\n\\n\" \n      + $('Parse AI Response').item.json.emailBody,\n    hs_timestamp: new Date().toISOString()\n  },\n  associations: [\n    {\n      to: { id: $json.id },\n      types: [\n        {\n          associationCategory: \"HUBSPOT_DEFINED\",\n          associationTypeId: 202\n        }\n      ]\n    }\n  ]\n} }}",
+        "options": {}
+      },
+      "id": "e3e99f7f-ce2b-431f-9dd2-a9dda804c66e",
+      "name": "HubSpot — Save Email Draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1664,
+        -80
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appuPA4vaI0TngXS9",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblgQ9B4UYhJKQMIx",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://airtable.com/appuPA4vaI0TngXS9/tblgQ9B4UYhJKQMIx"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('all we need').item.json.firstName }}",
+            "Email": "={{ $('Set Fields').item.json.email }}",
+            "Company": "={{ $('Set Fields').item.json.company }}",
+            "Website": "={{ $('Set Fields').item.json.website }}",
+            "Score": "={{ $('Parse AI Response').item.json.score }}",
+            "Industry": "={{ $('Parse AI Response').item.json.industry }}",
+            "Company Size": "={{ $('Parse AI Response').item.json.companySize }}",
+            "Score Reason": "={{ $('Parse AI Response').item.json.scoreReason }}",
+            "HubSpot Contact ID": "={{ $json.id }}",
+            "Processed At": "={{ $json.updatedAt }}",
+            "Status": "={{ $('Parse AI Response').item.json.score >= 70 ? 'HOT' : $('Parse AI Response').item.json.score >= 40 ? 'WARM' : 'COLD' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Field Name",
+              "displayName": "Field Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Field Type",
+              "displayName": "Field Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Attachments",
+              "displayName": "Attachments",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company Size",
+              "displayName": "Company Size",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Pain Points",
+              "displayName": "Pain Points",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Automation Opportunities",
+              "displayName": "Automation Opportunities",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Score Reason",
+              "displayName": "Score Reason",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "HOT",
+                  "value": "HOT"
+                },
+                {
+                  "name": "WARM",
+                  "value": "WARM"
+                },
+                {
+                  "name": "COLD",
+                  "value": "COLD"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "HubSpot Contact ID",
+              "displayName": "HubSpot Contact ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Processed At",
+              "displayName": "Processed At",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "117ebcb0-7a1b-4f2f-a5fa-2b7b38e6cee2",
+      "name": "Airtable — Log Lead",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2,
+      "position": [
+        1872,
+        128
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "y7ojaYdKy8GjWgX6",
+          "name": "Airtable Personal Access Token account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nreturn [{\n  text: $json.data\n    .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n    .replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n    .replace(/<[^>]*>/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim()\n    .slice(0, 2000)\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        128
+      ],
+      "id": "ed8e4423-3841-4b50-8171-03fb97b7cd27",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0e4deb70-6c20-4e65-badd-9e9a5977a161",
+              "name": "firstName",
+              "value": "={{ $('Set Fields').item.json.firstName}}",
+              "type": "string"
+            },
+            {
+              "id": "d5d800ea-3c5f-4c4e-8972-12c53d58c05a",
+              "name": "lastName",
+              "value": "={{ $('Set Fields').item.json.lastName}}",
+              "type": "string"
+            },
+            {
+              "id": "364a4b61-cb73-45c1-b8aa-0278c5f99035",
+              "name": "company",
+              "value": "={{ $('Set Fields').item.json.company}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        720,
+        128
+      ],
+      "id": "075df4d4-004d-4414-bc64-cafe1cb3a97e",
+      "name": "all we need"
+    }
+  ],
+  "pinData": {
+    "Webhook — New Lead": [
+      {
+        "json": {
+          "headers": {
+            "host": "chunkier-leila-cycadaceous.ngrok-free.dev",
+            "user-agent": "curl/8.5.0",
+            "content-length": "182",
+            "accept": "*/*",
+            "content-type": "application/json",
+            "x-forwarded-for": "2001:4490:44b1:64ed:2f0:8920:480d:bbfc",
+            "x-forwarded-host": "chunkier-leila-cycadaceous.ngrok-free.dev",
+            "x-forwarded-proto": "https",
+            "accept-encoding": "gzip"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "objectId": "462805690071",
+            "body": {
+              "properties": {
+                "firstname": "Test",
+                "lastname": "Lead",
+                "email": "test@stripe.com",
+                "company": "Stripe",
+                "website": "stripe.com",
+                "hs_lead_source": "Direct"
+              }
+            }
+          },
+          "webhookUrl": "http://localhost:5678/webhook-test/hubspot-lead",
+          "executionMode": "test"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook — New Lead": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fields": {
+      "main": [
+        [
+          {
+            "node": "Scrape Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape Website": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI — Analyse Lead": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Score >= 70? (Hot)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score >= 70? (Hot)": {
+      "main": [
+        [
+          {
+            "node": "HubSpot — Tag HOT",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Score >= 40? (Warm)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score >= 40? (Warm)": {
+      "main": [
+        [
+          {
+            "node": "HubSpot — Tag WARM",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HubSpot — Tag COLD",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot — Tag HOT": {
+      "main": [
+        [
+          {
+            "node": "HubSpot — Save Email Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot — Tag WARM": {
+      "main": [
+        [
+          {
+            "node": "Airtable — Log Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot — Tag COLD": {
+      "main": [
+        [
+          {
+            "node": "Airtable — Log Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot — Save Email Draft": {
+      "main": [
+        [
+          {
+            "node": "Airtable — Log Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "all we need",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "all we need": {
+      "main": [
+        [
+          {
+            "node": "OpenAI — Analyse Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c76cb961-3e3b-402b-a2be-b00e34d598bd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bc664105e998f70dd126e00cc0d23747d5eea3cf68fa181abd4090be216f2066"
+  },
+  "id": "EP4fHBLJZGyuDgWt",
+  "tags": []
+}
