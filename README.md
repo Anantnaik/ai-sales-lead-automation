@@ -6,7 +6,7 @@ An end-to-end AI-powered workflow that automatically researches, scores, and pri
 
 ## 🎥 Demo Video
 
-
+[![Watch the demo](https://img.youtube.com/vi/aY33J14lmPE/0.jpg)](https://www.youtube.com/watch?v=aY33J14lmPE)
 
 ---
 
@@ -28,39 +28,39 @@ All in under **12 seconds** — with zero human effort.
 
 ## ⚡ Key Features
 
-- **Automated Lead Detection**
-- **AI-Based Website Research**
-- **Lead Scoring (0–100)**
-- **HOT / WARM / COLD Classification**
-- **Personalized Email Generation**
-- **CRM Auto-Update**
-- **Airtable Logging & Dashboard**
+- Automated lead detection from CRM  
+- AI-based company research (via website scraping)  
+- Lead scoring system (0–100)  
+- HOT / WARM / COLD classification  
+- Personalized email generation  
+- Automatic CRM updates  
+- Airtable logging & live dashboard  
 
 ---
 
 ## 🧠 How It Works
 
 ### Step 1 — Detection
-A webhook instantly captures new contacts from the CRM including:
-- Name
-- Email
-- Company
-- Website
+A webhook captures new contact data from CRM:
+- Name  
+- Email  
+- Company  
+- Website  
 
 ---
 
 ### Step 2 — Website Research
-The system visits the company website and extracts meaningful business information.
+The system visits the company website and extracts meaningful business content.
 
 ---
 
 ### Step 3 — AI Analysis
-Using **GPT-4o-mini**, the system analyzes:
-- Industry
-- Company size
-- Pain points
-- Automation opportunities
-- Lead score (0–100)
+Using GPT-4o-mini, the system analyzes:
+- Industry  
+- Company size  
+- Pain points  
+- Automation opportunities  
+- Lead score (0–100)  
 
 ---
 
@@ -77,29 +77,29 @@ Using **GPT-4o-mini**, the system analyzes:
 ### Step 5 — CRM Update
 
 The system automatically:
-- Tags the lead (HOT/WARM/COLD)
-- Adds a **personalized email draft** to the contact timeline
+- Tags the lead (HOT / WARM / COLD)  
+- Adds a personalized email draft to the contact timeline  
 
 ---
 
 ### Step 6 — Data Logging
 
 All lead data is stored in Airtable:
-- Score
-- Industry
-- Pain points
-- Classification
-- Timestamp
+- Score  
+- Industry  
+- Pain points  
+- Classification  
+- Timestamp  
 
 ---
 
 ### Step 7 — Dashboard
 
 A live dashboard provides:
-- Total leads processed
-- HOT / WARM / COLD distribution
-- Average lead score
-- Industry breakdown
+- Total leads processed  
+- HOT / WARM / COLD distribution  
+- Average lead score  
+- Leads by industry  
 
 ---
 
@@ -121,8 +121,8 @@ A live dashboard provides:
 - 50 leads/week = **12–16 hours manual work**
 
 ### After
-- 50 leads processed in **under 10 minutes total**
-- Sales team focuses only on **closing deals**
+- 50 leads processed in **under 10 minutes total**  
+- Sales team focuses only on closing deals  
 
 ---
 
@@ -130,11 +130,11 @@ A live dashboard provides:
 
 This is not just automation.
 
-It is an **AI-powered sales assistant** that:
-- Works 24/7
-- Never misses a lead
-- Responds instantly
-- Improves conversion speed
+It is an AI-powered sales assistant that:
+- Works 24/7  
+- Never misses a lead  
+- Responds instantly  
+- Improves conversion speed  
 
 ---
 
@@ -149,20 +149,20 @@ It is an **AI-powered sales assistant** that:
 
 ## 📌 Future Improvements
 
-- Multi-channel outreach (LinkedIn, Email, WhatsApp)
-- CRM integrations beyond HubSpot
-- Advanced scoring using historical data
-- AI follow-up sequences
+- Multi-channel outreach (LinkedIn, Email, WhatsApp)  
+- CRM integrations beyond HubSpot  
+- Advanced scoring using historical data  
+- AI follow-up sequences  
 
 ---
 
 ## 👤 Author
 
-Built by Anant Naik  
-Focused on AI Automation & Sales Systems
+**Anant Naik**  
+AI Automation & Sales Systems
 
 ---
 
-## ⭐ If You Like This Project
+## ⭐ Support
 
-Star the repository and feel free to connect!
+If you find this project useful, consider giving it a star.
